@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Support\MessageBag;
 
 if (!function_exists('admin_path')) {
@@ -31,6 +32,10 @@ if (!function_exists('admin_url')) {
         if (\Illuminate\Support\Facades\URL::isValidUrl($path)) {
             return $path;
         }
+
+        // Sanitize path
+        $path = trim($path, '/');
+        $path = preg_replace('/[^a-zA-Z0-9_\-\/]/', '', $path);
 
         $secure = $secure ?: (config('admin.https') || config('admin.secure'));
 
@@ -149,18 +154,24 @@ if (!function_exists('admin_trans')) {
     /**
      * Translate the given message.
      *
-     * @param string $key
-     * @param array  $replace
-     * @param string $locale
+     * @param string|null $key
+     * @param array       $replace
+     * @param string|null $locale
      *
-     * @return \Illuminate\Contracts\Translation\Translator|string|array|null
+     * @return string|null
      */
-    function admin_trans($key = null, $replace = [], $locale = null)
+    function admin_trans(string $key = null, array $replace = [], string $locale = null)
     {
         $line = __($key, $replace, $locale);
 
-        if (!is_string($line)) {
-            return $key;
+        if (!is_string($line) || $line === $key) {
+            // Fallback to admin translation file
+            $adminKey = "admin.{$key}";
+            $line = __($adminKey, $replace, $locale);
+
+            if (!is_string($line) || $line === $adminKey) {
+                return $key;
+            }
         }
 
         return $line;
@@ -261,49 +272,97 @@ if (!function_exists('file_size')) {
     }
 }
 
-if (!function_exists('prepare_options')) {
+if (!function_exists('admin_csrf_token')) {
     /**
-     * @param array $options
-     *
-     * @return array
+     * Get CSRF token for admin forms
      */
-    function prepare_options(array $options)
+    function admin_csrf_token(): string
     {
-        $original = [];
-        $toReplace = [];
-
-        foreach ($options as $key => &$value) {
-            if (is_array($value)) {
-                $subArray = prepare_options($value);
-                $value = $subArray['options'];
-                $original = array_merge($original, $subArray['original']);
-                $toReplace = array_merge($toReplace, $subArray['toReplace']);
-            } elseif (strpos($value, 'function(') === 0) {
-                $original[] = $value;
-                $value = "%{$key}%";
-                $toReplace[] = "\"{$value}\"";
-            }
-        }
-
-        return compact('original', 'toReplace', 'options');
+        return csrf_token();
     }
 }
 
-if (!function_exists('json_encode_options')) {
+if (!function_exists('admin_csrf_field')) {
     /**
-     * @param array $options
-     *
-     * @return string
-     *
-     * @see http://web.archive.org/web/20080828165256/http://solutoire.com/2008/06/12/sending-javascript-functions-over-json/
+     * Generate CSRF field for admin forms
      */
-    function json_encode_options(array $options)
+    function admin_csrf_field(): string
     {
-        $data = prepare_options($options);
+        return csrf_field();
+    }
+}
 
-        $json = json_encode($data['options']);
+if (!function_exists('prepare_safe_options')) {
+    /**
+     * Safe preparation of options for frontend with callback validation
+     */
+    function prepare_safe_options(array $options): array
+    {
+        $allowedCallbacks = [
+            'refresh', 'submit', 'cancel', 'validate', 'success', 'error',
+            'load', 'save', 'delete', 'update', 'create'
+        ];
 
-        return str_replace($data['toReplace'], $data['original'], $json);
+        return array_map(function ($value) use ($allowedCallbacks) {
+            if (is_array($value)) {
+                return prepare_safe_options($value);
+            }
+
+            if (is_string($value) && strpos($value, 'function(') === 0) {
+                // Extract simple callback name for safe reference
+                if (preg_match('/function\s+([a-zA-Z_][a-zA-Z0-9_]*)/', $value, $matches)) {
+                    $callbackName = $matches[1] ?? 'defaultHandler';
+                } else {
+                    $callbackName = 'anonymous';
+                }
+
+                // Return safe callback reference
+                return [
+                    '_type' => 'js_callback',
+                    'handler' => in_array($callbackName, $allowedCallbacks) ? $callbackName : 'defaultHandler'
+                ];
+            }
+
+            return $value;
+        }, $options);
+    }
+}
+
+if (!function_exists('safe_json_encode_options')) {
+    /**
+     * Safe JSON encoding with callback validation
+     */
+    function safe_json_encode_options(array $options): string
+    {
+        $safeOptions = prepare_safe_options($options);
+        return json_encode($safeOptions, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+    }
+}
+
+if (!function_exists('migrate_old_options')) {
+    /**
+     * Migration helper for old options format
+     */
+    function migrate_old_options(array $oldOptions): array
+    {
+        $migrated = [];
+
+        foreach ($oldOptions as $key => $value) {
+            if (is_array($value)) {
+                $migrated[$key] = migrate_old_options($value);
+            } elseif (is_string($value) && strpos($value, 'function(') === 0) {
+                // Mark for manual review
+                $migrated[$key] = [
+                    '_type' => 'needs_migration',
+                    '_original' => $value,
+                    '_message' => 'This callback needs manual migration'
+                ];
+            } else {
+                $migrated[$key] = $value;
+            }
+        }
+
+        return $migrated;
     }
 }
 

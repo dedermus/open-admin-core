@@ -8,7 +8,10 @@ use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Application;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Redirector;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\MessageBag;
@@ -21,12 +24,12 @@ use OpenAdminCore\Admin\Form\Concerns\HasFields;
 use OpenAdminCore\Admin\Form\Concerns\HasFormAttributes;
 use OpenAdminCore\Admin\Form\Concerns\HasHooks;
 use OpenAdminCore\Admin\Form\Field;
+use OpenAdminCore\Admin\Form\Field\Traits\Sortable;
 use OpenAdminCore\Admin\Form\Layout\Layout;
 use OpenAdminCore\Admin\Form\Row;
 use OpenAdminCore\Admin\Form\Tab;
 use OpenAdminCore\Admin\Grid\Tools\BatchEdit;
 use OpenAdminCore\Admin\Traits\ShouldSnakeAttributes;
-use Spatie\EloquentSortable\Sortable;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -181,9 +184,9 @@ class Form implements Renderable
     }
 
     /**
-     * @return Model
+     * @return Model|Actions\Interactor\Form
      */
-    public function model(): Model
+    public function model(): Model|Actions\Interactor\Form
     {
         return $this->model;
     }
@@ -339,7 +342,7 @@ class Form implements Renderable
     /**
      * Store a new record.
      *
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector|\Illuminate\Http\JsonResponse
+     * @return RedirectResponse|Redirector|\Illuminate\Http\JsonResponse
      */
     public function store()
     {
@@ -537,7 +540,7 @@ class Form implements Renderable
      * @param int  $id
      * @param null $data
      *
-     * @return bool|\Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse|\Illuminate\Http\Response|mixed|null|Response
+     * @return bool|\Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\JsonResponse|RedirectResponse|\Illuminate\Http\Response|mixed|null|Response
      */
     public function update($id, $data = null)
     {
@@ -592,6 +595,7 @@ class Form implements Renderable
         }
 
         if ($response = $this->ajaxResponse(trans('admin.update_succeeded'))) {
+
             return $response;
         }
 
@@ -601,14 +605,14 @@ class Form implements Renderable
     /**
      * Get RedirectResponse after store.
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     protected function redirectAfterStore()
     {
         $resourcesPath = $this->resource(0);
         $key           = $this->model->getKey();
 
-        return $this->redirectAfterSaving($resourcesPath, $key);
+        return $this->redirectAfterSaving($resourcesPath, $key, 'create');
     }
 
     /**
@@ -616,45 +620,57 @@ class Form implements Renderable
      *
      * @param mixed $key
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
-    protected function redirectAfterUpdate($key)
+    protected function redirectAfterUpdate(mixed $key): Redirector|RedirectResponse
     {
         $resourcesPath = $this->resource(-1);
 
-        return $this->redirectAfterSaving($resourcesPath, $key);
+        return $this->redirectAfterSaving($resourcesPath, $key, 'update');
     }
 
     /**
-     * Get RedirectResponse after data saving.
+     * Get RedirectResponse after data saving or update.
      *
-     * @param string $resourcesPath
-     * @param string $key
+     * @param string $resourcesPath Базовый путь к ресурсу
+     * @param string $key ID ресурса
+     * @param string $action Тип действия (create/update/delete)
      *
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
+     * @return Application|RedirectResponse|Redirector
      */
-    protected function redirectAfterSaving($resourcesPath, $key)
+    protected function redirectAfterSaving(string $resourcesPath, string $key, string $action = 'create'): Application|Redirector|RedirectResponse
     {
+        // Нормализуем путь (убираем конечный слэш)
+        $basePath = rtrim($resourcesPath, '/');
+
+        // Определяем URL для редиректа на основе действия after-save
         if (request('after-save') == 'continue_editing') {
-            // continue editing
-            $url = rtrim($resourcesPath, '/')."/{$key}/edit";
+            $url = "{$basePath}/{$key}/edit";
         } elseif (request('after-save') == 'continue_creating') {
-            // continue creating
-            $url = rtrim($resourcesPath, '/').'/create';
+            $url = "{$basePath}/create";
         } elseif (request('after-save') == 'view') {
-            // view resource
-            $url = rtrim($resourcesPath, '/')."/{$key}";
+            $url = "{$basePath}/{$key}";
         } elseif (request('after-save') == 'exit') {
-            // return message
-            return trans('admin.save_succeeded');
-            exit;
+            // Редирект на предыдущую страницу или базовый путь
+            $url = request(Builder::PREVIOUS_URL_KEY) ?: $basePath;
         } elseif (strpos(request('_previous_'), 'ids')) {
-            $url = (new BatchEdit(trans('admin.batch_edit')))->buildBatchUrl($resourcesPath);
+            // Батч-редактирование
+            $url = (new BatchEdit(trans('admin.batch_edit')))->buildBatchUrl($basePath);
         } else {
-            $url = request(Builder::PREVIOUS_URL_KEY) ?: $resourcesPath;
+            // По умолчанию - предыдущий URL или базовый путь
+            $url = request(Builder::PREVIOUS_URL_KEY) ?: $basePath;
         }
 
-        admin_toastr(trans('admin.save_succeeded'));
+        // Определяем сообщение об успехе в зависимости от действия
+        $message = match ($action) {
+            'create' => 'admin.save_succeeded',
+            'update' => 'admin.update_succeeded',
+            'delete' => 'admin.delete_succeeded',
+            default => 'admin.save_succeeded',
+        };
+
+        // Добавляем toast-уведомление
+        admin_toastr(trans($message));
 
         return redirect($url);
     }

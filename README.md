@@ -109,7 +109,7 @@ DB_PASSWORD=postgres
 # Затем устанавливаем админ-панель
 
 ```
-composer require dedermus/open-admin-core
+composer require laravel-packages/open-admin-core
 ```
 
 Затем запустите эти команды для публикации ресурсов и конфигурации:
@@ -124,18 +124,40 @@ php artisan vendor:publish --provider="OpenAdminCore\Admin\AdminServiceProvider"
     
         ...
 
-        'uploads' => [
+'uploads' => [
             'driver' => 'local',
             'root' => public_path('uploads'),
             'url' => env('APP_URL').'/uploads',
             'visibility' => 'public',
+            'throw' => false,
+            'permissions' => [
+                'file' => [
+                    'public' => 0644,
+                    'private' => 0600,
+                ],
+                'dir' => [
+                    'public' => 0755,
+                    'private' => 0700,
+                ],
+            ],
         ],
 
         'admin' => [
             'driver' => 'local',
-            'root' => public_path('uploads'),
-            'url' => env('APP_URL').'/uploads',
+            'root' => public_path('admin/uploads'),
+            'url' => env('APP_URL').'/admin/uploads',
             'visibility' => 'public',
+            'throw' => false,
+            'permissions' => [
+                'file' => [
+                    'public' => 0644,
+                    'private' => 0600,
+                ],
+                'dir' => [
+                    'public' => 0755,
+                    'private' => 0700,
+                ],
+            ],
         ],
         
         ...
