@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Hash;
 use OpenAdminCore\Admin\Auth\Notifications\ResetPassword;
 use OpenAdminCore\Admin\Traits\DefaultDatetimeFormat;
 use OpenAdminCore\Admin\Traits\ModelTree;
@@ -137,7 +136,7 @@ class Administrator extends Model implements AuthenticatableContract, CanResetPa
      */
     public function setPasswordAttribute($password): void
     {
-        $this->attributes['password'] = Hash::make($password);
+        $this->attributes['password'] = $password;
     }
 
     /**
