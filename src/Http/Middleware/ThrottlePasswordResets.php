@@ -36,7 +36,7 @@ class ThrottlePasswordResets
      */
     public function handle(Request $request, Closure $next)
     {
-        $maxAttempts = config('admin.auth.password_reset.throttle', 3);
+        $maxAttempts = config('auth.password_reset.throttle', 3);
         $decayMinutes = config('admin.auth.password_reset.throttle_decay_minutes', 60);
 
         $key = 'admin-password-reset:' . $request->ip();
@@ -51,7 +51,7 @@ class ThrottlePasswordResets
             ]);
 
             return back()->withErrors([
-                'credential' => __('admin::admin.password_reset.throttle', ['seconds' => $seconds]),
+                'credential' => __('admin.password_reset.throttle', ['seconds' => $seconds]),
             ])->withInput();
         }
 

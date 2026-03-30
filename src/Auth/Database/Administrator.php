@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use OpenAdminCore\Admin\Auth\Notifications\ResetPassword;
 use OpenAdminCore\Admin\Traits\DefaultDatetimeFormat;
 use OpenAdminCore\Admin\Traits\ModelTree;
+use Illuminate\Notifications\Notifiable;
 
 /**
  * Class Administrator
@@ -35,6 +36,7 @@ class Administrator extends Model implements AuthenticatableContract, CanResetPa
     use HasPermissions;
     use DefaultDatetimeFormat;
     use ModelTree;
+    use Notifiable;
 
     /**
      * {@inheritdoc}

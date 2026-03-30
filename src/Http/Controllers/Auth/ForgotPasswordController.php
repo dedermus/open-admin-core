@@ -82,7 +82,7 @@ class ForgotPasswordController extends Controller
      */
     protected function sendGenericResponse()
     {
-        return back()->with('status', __('admin::admin.password_reset.sent_if_exists'));
+        return back()->with('status', __('admin.password_reset.sent_if_exists'));
     }
 
     /**
