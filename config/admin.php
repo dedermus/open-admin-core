@@ -211,6 +211,7 @@ return [
         'role_users_table'       => 'admin_role_users',
         'role_permissions_table' => 'admin_role_permissions',
         'role_menu_table'        => 'admin_role_menu',
+        'password_reset_tokens'  => 'admin_password_reset_tokens',
     ],
 
     /*

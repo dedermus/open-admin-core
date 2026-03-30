@@ -25,7 +25,7 @@ final class CreateAdminTables extends Migration
      */
     private function getAdminTables(): array
     {
-        return [
+        $tables = array_filter([
             config('admin.database.operation_log_table'),
             config('admin.database.role_menu_table'),
             config('admin.database.user_permissions_table'),
@@ -36,7 +36,11 @@ final class CreateAdminTables extends Migration
             config('admin.database.roles_table'),
             config('admin.database.users_table'),
             config('admin.database.password_reset_tokens'),
-        ];
+        ], function ($table) {
+            return !empty($table) && is_string($table);
+        });
+
+        return array_values($tables);
     }
 
     /**
@@ -77,7 +81,9 @@ final class CreateAdminTables extends Migration
         Schema::disableForeignKeyConstraints();
 
         foreach ($this->getAdminTables() as $table) {
-            Schema::dropIfExists($table);
+            if (!empty($table) && is_string($table)) {
+                Schema::dropIfExists($table);
+            }
         }
 
         Schema::enableForeignKeyConstraints();
@@ -91,7 +97,9 @@ final class CreateAdminTables extends Migration
         Schema::disableForeignKeyConstraints();
 
         foreach ($this->getAdminTables() as $table) {
-            Schema::dropIfExists($table);
+            if (!empty($table)) {
+                Schema::dropIfExists($table);
+            }
         }
 
         Schema::enableForeignKeyConstraints();
@@ -117,7 +125,9 @@ final class CreateAdminTables extends Migration
             $table->string('remember_token', 100)->nullable()
                 ->comment('Токен для функционала "Запомнить меня"');
 
-            $table->timestamps()->comment('Временные метки создания и обновления');
+            // Создаём поля created_at и updated_at отдельно
+            $table->timestamp('created_at')->nullable()->comment('Время создания записи');
+            $table->timestamp('updated_at')->nullable()->comment('Время обновления записи');
 
             // Индексы для оптимизации поиска и сортировки
             $table->index('name', 'idx_users_name');
@@ -140,7 +150,9 @@ final class CreateAdminTables extends Migration
             $table->string('name', 50)->unique()->comment('Название роли (для отображения)');
             $table->string('slug', 50)->unique()->comment('Системный идентификатор роли (slug)');
 
-            $table->timestamps()->comment('Временные метки создания и обновления');
+            // Создаём поля created_at и updated_at отдельно
+            $table->timestamp('created_at')->nullable()->comment('Время создания записи');
+            $table->timestamp('updated_at')->nullable()->comment('Время обновления записи');
 
             $table->index('slug', 'idx_roles_slug');
             $table->index('created_at', 'idx_roles_created_at');
@@ -161,10 +173,12 @@ final class CreateAdminTables extends Migration
             $table->string('http_method')->nullable()->comment('HTTP-методы (GET, POST, PUT, DELETE и т.д.)');
             $table->text('http_path')->nullable()->comment('HTTP-пути, на которые распространяется разрешение');
 
-            $table->timestamps()->comment('Временные метки создания и обновления');
+            // Создаём поля created_at и updated_at отдельно
+            $table->timestamp('created_at')->nullable()->comment('Время создания записи');
+            $table->timestamp('updated_at')->nullable()->comment('Время обновления записи');
 
             $table->index('slug', 'idx_permissions_slug');
-            $table->index(['http_path' => 191], 'idx_permissions_http_path');
+            $table->index('http_path', 'idx_permissions_http_path');
         });
     }
 
@@ -186,13 +200,15 @@ final class CreateAdminTables extends Migration
             $table->string('permission')->nullable()
                 ->comment('Необходимое разрешение для доступа (slug из permissions)');
 
-            $table->timestamps()->comment('Временные метки создания и обновления');
+            // Создаём поля created_at и updated_at отдельно
+            $table->timestamp('created_at')->nullable()->comment('Время создания записи');
+            $table->timestamp('updated_at')->nullable()->comment('Время обновления записи');
 
             // Индексы для построения дерева меню и быстрого доступа
             $table->index('parent_id', 'idx_menu_parent_id');
             $table->index(['parent_id', 'order'], 'idx_menu_parent_order');
             $table->index('permission', 'idx_menu_permission');
-            $table->index(['uri' => 191], 'idx_menu_uri');
+            $table->index('uri', 'idx_menu_uri');
         });
     }
 
@@ -210,7 +226,9 @@ final class CreateAdminTables extends Migration
             $table->unsignedBigInteger('role_id')->comment('ID роли');
             $table->unsignedBigInteger('user_id')->comment('ID пользователя');
 
-            $table->timestamps()->comment('Временные метки создания и обновления связи');
+            // Создаём поля created_at и updated_at отдельно
+            $table->timestamp('created_at')->nullable()->comment('Время создания связи');
+            $table->timestamp('updated_at')->nullable()->comment('Время обновления связи');
 
             // Составные индексы для оптимизации JOIN-запросов
             $table->unique(['role_id', 'user_id'], 'uniq_role_user');
@@ -248,7 +266,9 @@ final class CreateAdminTables extends Migration
             $table->unsignedBigInteger('role_id')->comment('ID роли');
             $table->unsignedBigInteger('permission_id')->comment('ID разрешения');
 
-            $table->timestamps()->comment('Временные метки создания и обновления связи');
+            // Создаём поля created_at и updated_at отдельно
+            $table->timestamp('created_at')->nullable()->comment('Время создания связи');
+            $table->timestamp('updated_at')->nullable()->comment('Время обновления связи');
 
             $table->unique(['role_id', 'permission_id'], 'uniq_role_permission');
             $table->index(['role_id', 'permission_id'], 'idx_role_permission');
@@ -284,7 +304,9 @@ final class CreateAdminTables extends Migration
             $table->unsignedBigInteger('user_id')->comment('ID пользователя');
             $table->unsignedBigInteger('permission_id')->comment('ID разрешения');
 
-            $table->timestamps()->comment('Временные метки создания и обновления связи');
+            // Создаём поля created_at и updated_at отдельно
+            $table->timestamp('created_at')->nullable()->comment('Время создания связи');
+            $table->timestamp('updated_at')->nullable()->comment('Время обновления связи');
 
             $table->unique(['user_id', 'permission_id'], 'uniq_user_permission');
             $table->index(['user_id', 'permission_id'], 'idx_user_permission');
@@ -320,7 +342,9 @@ final class CreateAdminTables extends Migration
             $table->unsignedBigInteger('role_id')->comment('ID роли');
             $table->unsignedBigInteger('menu_id')->comment('ID пункта меню');
 
-            $table->timestamps()->comment('Временные метки создания и обновления связи');
+            // Создаём поля created_at и updated_at отдельно
+            $table->timestamp('created_at')->nullable()->comment('Время создания связи');
+            $table->timestamp('updated_at')->nullable()->comment('Время обновления связи');
 
             $table->unique(['role_id', 'menu_id'], 'uniq_role_menu');
             $table->index(['role_id', 'menu_id'], 'idx_role_menu');
@@ -366,13 +390,15 @@ final class CreateAdminTables extends Migration
                 $table->longText('input')->comment('Входные параметры запроса в формате JSON (сериализованный)');
             }
 
-            $table->timestamps()->comment('Временные метки создания и обновления');
+            // Создаём поля created_at и updated_at отдельно
+            $table->timestamp('created_at')->nullable()->comment('Время создания связи');
+            $table->timestamp('updated_at')->nullable()->comment('Время обновления связи');
 
             // Индексы для эффективной работы с логами
             $table->index('user_id', 'idx_operation_log_user_id');
             $table->index('created_at', 'idx_operation_log_created_at');
             $table->index(['user_id', 'created_at'], 'idx_operation_log_user_created');
-            $table->index(['path' => 191], 'idx_operation_log_path');
+            $table->index('path', 'idx_operation_log_path');
             $table->index('method', 'idx_operation_log_method');
             $table->index('ip', 'idx_operation_log_ip');
 
