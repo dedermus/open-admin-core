@@ -2,13 +2,23 @@
 
 namespace OpenAdminCore\Admin\Controllers;
 
+use Illuminate\Config\Repository;
+use Illuminate\Contracts\Auth\Guard;
+use Illuminate\Contracts\Auth\StatefulGuard;
+use Illuminate\Contracts\Translation\Translator;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Contracts\View\View;
+use Illuminate\Foundation\Application;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
+use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use OpenAdminCore\Admin\Facades\Admin;
 use OpenAdminCore\Admin\Form;
 use OpenAdminCore\Admin\Layout\Content;
@@ -18,14 +28,14 @@ class AuthController extends Controller
     /**
      * @var string
      */
-    protected $loginView = 'admin::login';
+    protected string $loginView = 'admin::login';
 
     /**
      * Show the login page.
      *
-     * @return \Illuminate\Contracts\View\Factory|Redirect|\Illuminate\View\View
+     * @return Factory|View|Application|RedirectResponse|Redirector
      */
-    public function getLogin()
+    public function getLogin(): View|Application|Factory|Redirector|RedirectResponse
     {
         if ($this->guard()->check()) {
             return redirect($this->redirectPath());
@@ -39,9 +49,10 @@ class AuthController extends Controller
      *
      * @param Request $request
      *
-     * @return mixed
+     * @return RedirectResponse|Response
+     * @throws ValidationException
      */
-    public function postLogin(Request $request)
+    public function postLogin(Request $request): Response|RedirectResponse
     {
         $rate_limit_key = 'login-tries-'.Admin::guardName();
 
@@ -73,7 +84,7 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Contracts\Validation\Validator
      */
-    protected function loginValidator(array $data)
+    protected function loginValidator(array $data): \Illuminate\Contracts\Validation\Validator
     {
         return Validator::make($data, [
             $this->username() => 'required',
@@ -84,9 +95,11 @@ class AuthController extends Controller
     /**
      * User logout.
      *
-     * @return Redirect
+     * @param Request $request
+     *
+     * @return Application|RedirectResponse|Redirector
      */
-    public function getLogout(Request $request)
+    public function getLogout(Request $request): Application|Redirector|RedirectResponse
     {
         $this->guard()->logout();
 
@@ -102,7 +115,7 @@ class AuthController extends Controller
      *
      * @return Content
      */
-    public function getSetting(Content $content)
+    public function getSetting(Content $content): Content
     {
         $form = $this->settingForm();
         $form->tools(
@@ -123,7 +136,7 @@ class AuthController extends Controller
      *
      * @return \Symfony\Component\HttpFoundation\Response
      */
-    public function putSetting()
+    public function putSetting(): \Symfony\Component\HttpFoundation\Response
     {
         return $this->settingForm()->update(Admin::user()->id);
     }
@@ -133,7 +146,7 @@ class AuthController extends Controller
      *
      * @return Form
      */
-    protected function settingForm()
+    protected function settingForm(): Form
     {
         $class = config('admin.database.users_model');
 
@@ -168,9 +181,9 @@ class AuthController extends Controller
     }
 
     /**
-     * @return string|\Symfony\Component\Translation\TranslatorInterface
+     * @return array|Translator|Application|string
      */
-    protected function getFailedLoginMessage()
+    protected function getFailedLoginMessage(): Application|array|string|Translator
     {
         return Lang::has('auth.failed')
             ? trans('auth.failed')
@@ -180,9 +193,9 @@ class AuthController extends Controller
     /**
      * Get the post login redirect path.
      *
-     * @return string
+     * @return Repository|Application|mixed|null
      */
-    protected function redirectPath()
+    protected function redirectPath(): mixed
     {
         if (method_exists($this, 'redirectTo')) {
             return $this->redirectTo();
@@ -194,11 +207,11 @@ class AuthController extends Controller
     /**
      * Send the response after the user was authenticated.
      *
-     * @param \Illuminate\Http\Request $request
+     * @param Request $request
      *
-     * @return \Illuminate\Http\Response
+     * @return RedirectResponse
      */
-    protected function sendLoginResponse(Request $request)
+    protected function sendLoginResponse(Request $request): RedirectResponse
     {
         admin_toastr(trans('admin.login_successful'));
 
@@ -212,7 +225,7 @@ class AuthController extends Controller
      *
      * @return string
      */
-    protected function username()
+    protected function username(): string
     {
         return 'username';
     }
@@ -220,9 +233,9 @@ class AuthController extends Controller
     /**
      * Get the guard to be used during authentication.
      *
-     * @return \Illuminate\Contracts\Auth\StatefulGuard
+     * @return Guard|StatefulGuard
      */
-    protected function guard()
+    protected function guard(): Guard|StatefulGuard
     {
         return Admin::guard();
     }

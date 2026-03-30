@@ -1,0 +1,21 @@
+parameters:
+    level: 8
+    paths:
+        - src/
+        - config/
+    excludePaths:
+        - tests/
+        - database/migrations/
+        - resources/
+    checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false
+    reportUnmatchedIgnoredErrors: true
+    ignoreErrors:
+        - '#Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\BelongsTo::\$[a-zA-Z0-9_]+#'
+        - '#Call to an undefined method Illuminate\\Database\\Query\\Builder::\$[a-zA-Z0-9_]+#'
+        - '#PHPDoc tag @var for variable \$\w+ contains unknown class#'
+    bootstrapFiles:
+        - vendor/larastan/larastan/bootstrap.php
+    scanDirectories:
+        - vendor/laravel/framework/src/Illuminate/Database/Eloquent
+        - vendor/laravel/framework/src/Illuminate/Support

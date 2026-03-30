@@ -74,7 +74,8 @@ class MakeCommand extends GeneratorCommand
 
         if (parent::handle() !== false) {
             $path = Str::plural(Str::kebab(class_basename($this->modelName)));
-
+            // Удаляем подстроку "-models" (регистронезависимо)
+            $path = preg_replace('/-models/i', '', $path);
             $this->line('');
             $this->comment('Add the following route to app/Admin/routes.php:');
             $this->line('');

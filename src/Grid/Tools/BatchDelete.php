@@ -2,7 +2,9 @@
 
 namespace OpenAdminCore\Admin\Grid\Tools;
 
+use Illuminate\Support\Facades\Request;
 use OpenAdminCore\Admin\Actions\BatchAction;
+use OpenAdminCore\Admin\Actions\Response;
 
 class BatchDelete extends BatchAction
 {
@@ -24,5 +26,14 @@ class BatchDelete extends BatchAction
             admin.resource.batch_delete(resource_url);
         });
 JS;
+    }
+
+    /**
+     * Handle the batch delete action.
+     *
+     */
+    public function handle()
+    {
+
     }
 }

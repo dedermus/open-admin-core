@@ -5,6 +5,7 @@ namespace OpenAdminCore\Admin;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\ServiceProvider;
 use OpenAdminCore\Admin\Layout\Content;
 
@@ -13,7 +14,7 @@ class AdminServiceProvider extends ServiceProvider
     /**
      * @var array
      */
-    protected $commands = [
+    protected array $commands = [
         Console\AdminCommand::class,
         Console\MakeCommand::class,
         Console\ControllerCommand::class,
@@ -40,7 +41,7 @@ class AdminServiceProvider extends ServiceProvider
      *
      * @var array
      */
-    protected $routeMiddleware = [
+    protected array $routeMiddleware = [
         'admin.auth'       => Middleware\Authenticate::class,
         'admin.throttle'   => Middleware\Throttle::class,
         'admin.pjax'       => Middleware\Pjax::class,
@@ -48,6 +49,7 @@ class AdminServiceProvider extends ServiceProvider
         'admin.permission' => Middleware\Permission::class,
         'admin.bootstrap'  => Middleware\Bootstrap::class,
         'admin.session'    => Middleware\Session::class,
+        'admin.throttle.password_reset' => Http\Middleware\ThrottlePasswordResets::class,
     ];
 
     /**
@@ -55,7 +57,7 @@ class AdminServiceProvider extends ServiceProvider
      *
      * @var array
      */
-    protected $middlewareGroups = [
+    protected array $middlewareGroups = [
         'admin' => [
             'admin.auth',
             'admin.throttle',
@@ -67,16 +69,25 @@ class AdminServiceProvider extends ServiceProvider
         ],
     ];
 
+
     /**
      * Boot the service provider.
      *
      * @return void
      */
-    public function boot()
+    public function boot(): void
     {
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'admin');
 
         $this->ensureHttps();
+
+        // Настраиваем брокер паролей
+        $this->setupPasswordBroker();
+
+        // Загружаем маршруты восстановления пароля, если включены
+        if (config('admin.auth.password_reset.enabled', true)) {
+            $this->loadRoutesFrom(__DIR__.'/routes/password-reset.php');
+        }
 
         if (file_exists($routes = admin_path('routes.php'))) {
             $this->loadRoutesFrom($routes);
@@ -92,7 +103,7 @@ class AdminServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    protected function ensureHttps()
+    protected function ensureHttps(): void
     {
         if (config('admin.https') || config('admin.secure')) {
             url()->forceScheme('https');
@@ -105,7 +116,7 @@ class AdminServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    protected function registerPublishing()
+    protected function registerPublishing(): void
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([__DIR__.'/../config' => config_path()], 'open-admin-config');
@@ -121,7 +132,7 @@ class AdminServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    protected function compatibleBlade()
+    protected function compatibleBlade(): void
     {
         $reflectionClass = new \ReflectionClass('\Illuminate\View\Compilers\BladeCompiler');
 
@@ -133,7 +144,7 @@ class AdminServiceProvider extends ServiceProvider
     /**
      * Extends laravel router.
      */
-    protected function macroRouter()
+    protected function macroRouter(): void
     {
         Router::macro('content', function ($uri, $content, $options = []) {
             return $this->match(['GET', 'HEAD'], $uri, function (Content $layout) use ($content, $options) {
@@ -159,7 +170,7 @@ class AdminServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function register()
+    public function register(): void
     {
         $this->loadAdminAuthConfig();
 
@@ -168,14 +179,51 @@ class AdminServiceProvider extends ServiceProvider
         $this->commands($this->commands);
 
         $this->macroRouter();
+
+        // Расширяем конфигурацию auth
+        $this->extendAuthConfig();
     }
+
+    /**
+     * Extend auth configuration for password reset.
+     *
+     * @return void
+     */
+    protected function extendAuthConfig(): void
+    {
+        // Добавляем провайдер для администраторов
+        config()->set('auth.providers.admin', [
+            'driver' => 'eloquent',
+            'model' => config('admin.database.users_model', \OpenAdminCore\Admin\Auth\Database\Administrator::class),
+        ]);
+
+        // Добавляем брокер паролей для администраторов
+        config()->set('auth.passwords.admin', [
+            'provider' => 'admin',
+            'table' => 'admin_password_reset_tokens',
+            'expire' => config('admin.auth.password_reset.expire', 60),
+            'throttle' => config('admin.auth.password_reset.throttle', 60),
+        ]);
+    }
+
+    /**
+     * Setup password broker.
+     *
+     * @return void
+     */
+    protected function setupPasswordBroker(): void
+    {
+        // Регистрируем кастомный брокер
+        Password::setDefaultDriver('admin');
+    }
+
 
     /**
      * Setup auth configuration.
      *
      * @return void
      */
-    protected function loadAdminAuthConfig()
+    protected function loadAdminAuthConfig(): void
     {
         config(Arr::dot(config('admin.auth', []), 'auth.'));
     }
@@ -185,7 +233,7 @@ class AdminServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    protected function registerRouteMiddleware()
+    protected function registerRouteMiddleware(): void
     {
         // register route middleware.
         foreach ($this->routeMiddleware as $key => $middleware) {
@@ -203,7 +251,7 @@ class AdminServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function bladeDirectives()
+    public function bladeDirectives(): void
     {
         Blade::directive('box', function ($title) {
             return "<?php \$box = new \OpenAdminCore\Admin\Widgets\Box({$title}, '";

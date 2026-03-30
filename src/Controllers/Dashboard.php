@@ -2,13 +2,15 @@
 
 namespace OpenAdminCore\Admin\Controllers;
 
+use Illuminate\Contracts\View\Factory;
 use Illuminate\Support\Arr;
+use Illuminate\View\View;
 use OpenAdminCore\Admin\Admin;
 
 class Dashboard
 {
     /**
-     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     * @return Factory|View
      */
     public static function title()
     {
@@ -16,7 +18,7 @@ class Dashboard
     }
 
     /**
-     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     * @return Factory|View
      */
     public static function environment()
     {
@@ -41,7 +43,7 @@ class Dashboard
     }
 
     /**
-     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     * @return Factory|View
      */
     public static function extensions()
     {
@@ -107,7 +109,7 @@ class Dashboard
     }
 
     /**
-     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     * @return Factory|View
      */
     public static function dependencies()
     {

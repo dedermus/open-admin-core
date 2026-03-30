@@ -1,53 +1,39 @@
 {
-  "name": "dedermus/open-admin-core",
-  "description": "open-admin-core. Open-source Laravel Admin panel. No pro or paid package, free & open. Based on laravel-admin, with special thanks to z-song",
-  "type": "library",
-  "keywords": ["laravel", "admin", "grid", "form", "open-admin","open","free"],
-  "homepage": "https://github.com/dedermus/open-admin-core.git",
+  "name": "laravel-packages/open-admin-core",
+  "description": "Ядро админки для Laravel 13",
+  "keywords": ["laravel", "admin", "administrator", "adminlte", "dashboard"],
   "license": "MIT",
+  "homepage": "https://github.com/dedermus/open-admin-core",
   "authors": [
     {
-      "name": "dedermus",
-      "email": "dedermus@yandex.ru"
+      "name": "Aleksandr Lomovtsev",
+      "email": "your-email@example.com",
+      "role": "Maintainer"
     }
   ],
   "require": {
-    "php": "^8.2",
-    "symfony/dom-crawler": "~3.1|~4.0|~5.0|~7.1",
-    "laravel/framework": ">=7.0",
-    "doctrine/dbal": "^4.1"
+    "php": "^8.3",
+    "laravel/framework": "^13.0",
+    "ext-fileinfo": "*",
+    "ext-json": "*"
   },
   "require-dev": {
-    "laravel/laravel": "^11",
-    "fzaninotto/faker": "~1.4",
-    "intervention/image": "~2.3",
-    "laravel/browser-kit-testing": "^6.0",
-    "spatie/phpunit-watcher": "^1.22.0"
+    "phpunit/phpunit": "^11.5",
+    "mockery/mockery": "^1.6",
+    "orchestra/testbench": "^10.0",
+    "larastan/larastan": "^3.0",
+    "phpstan/phpstan": "^2.0",
+    "laravel/pint": "^1.18"
   },
   "autoload": {
     "psr-4": {
       "OpenAdminCore\\Admin\\": "src/"
-    },
-    "files": [
-      "src/helpers.php"
-    ]
+    }
   },
   "autoload-dev": {
     "psr-4": {
-      "Tests\\Models\\": "tests/models",
-      "Tests\\Controllers\\": "tests/controllers"
-    },
-    "classmap": [
-      "tests/TestCase.php"
-    ]
-  },
-  "scripts": {
-    "sass": "sass --watch resources/assets/open-admin-core/scss/styles.scss:resources/assets/open-admin-core/css/styles.css resources/assets/open-admin-core/scss/pages:resources/assets/open-admin-core/css/pages --style compressed",
-    "test": "./vendor/bin/phpunit"
-  },
-  "suggest": {
-    "intervention/image": "Required to handling and manipulation upload images (~2.3).",
-    "spatie/eloquent-sortable": "Required to built orderable gird."
+      "OpenAdminCore\\Admin\\Tests\\": "tests/"
+    }
   },
   "extra": {
     "laravel": {
@@ -59,7 +45,23 @@
       }
     }
   },
+  "scripts": {
+    "test": "phpunit",
+    "test-coverage": "phpunit --coverage-html coverage",
+    "analyse": "phpstan analyse",
+    "format": "pint",
+    "check": [
+      "@format",
+      "@analyse",
+      "@test"
+    ]
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
   "config": {
-    "process-timeout": 0
+    "sort-packages": true,
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
   }
 }

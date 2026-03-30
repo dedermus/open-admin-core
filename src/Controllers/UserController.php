@@ -2,6 +2,8 @@
 
 namespace OpenAdminCore\Admin\Controllers;
 
+use Illuminate\Contracts\Translation\Translator;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Hash;
 use OpenAdminCore\Admin\Form;
 use OpenAdminCore\Admin\Grid;
@@ -12,9 +14,9 @@ class UserController extends AdminController
     /**
      * {@inheritdoc}
      */
-    protected function title()
+    protected function title(): Application|array|string|Translator|null
     {
-        return trans('admin.administrator');
+        return __('admin.administrator');
     }
 
     /**
@@ -22,21 +24,23 @@ class UserController extends AdminController
      *
      * @return Grid
      */
-    protected function grid()
+    protected function grid(): Grid
     {
         $userModel = config('admin.database.users_model');
 
         $grid = new Grid(new $userModel());
 
         $grid->column('id', 'ID')->sortable();
-        $grid->column('username', trans('admin.username'))->sortable();
-        $grid->column('name', trans('admin.name'))->sortable();
-        $grid->column('roles', trans('admin.roles'))->pluck('name')->label();
-        $grid->column('created_at', trans('admin.created_at'))->sortable();
-        $grid->column('updated_at', trans('admin.updated_at'))->sortable();
+        $grid->column('username', __('admin.username'))->sortable();
+        $grid->column('name', __('admin.name'))->sortable();
+        $grid->column('roles', __('admin.roles'))->pluck('name')->label();
+        $grid->column('created_at', __('admin.created_at'))->sortable();
+        $grid->column('updated_at', __('admin.updated_at'))->sortable();
 
         $grid->actions(function (Grid\Displayers\Actions\Actions $actions) {
-            if ($actions->getKey() == 1) {
+            // Проверяем, есть ли у пользователя роль "administrator"
+            $hasAdminRole = $actions->row->roles->contains('slug', 'administrator');
+            if ($hasAdminRole) {
                 $actions->disableDelete();
             }
         });
@@ -57,23 +61,23 @@ class UserController extends AdminController
      *
      * @return Show
      */
-    protected function detail($id)
+    protected function detail(mixed $id): Show
     {
         $userModel = config('admin.database.users_model');
 
         $show = new Show($userModel::findOrFail($id));
 
         $show->field('id', 'ID');
-        $show->field('username', trans('admin.username'));
-        $show->field('name', trans('admin.name'));
-        $show->field('roles', trans('admin.roles'))->as(function ($roles) {
+        $show->field('username', __('admin.username'));
+        $show->field('name', __('admin.name'));
+        $show->field('roles', __('admin.roles'))->as(function ($roles) {
             return $roles->pluck('name');
         })->label();
-        $show->field('permissions', trans('admin.permissions'))->as(function ($permission) {
+        $show->field('permissions', __('admin.permissions'))->as(function ($permission) {
             return $permission->pluck('name');
         })->label();
-        $show->field('created_at', trans('admin.created_at'));
-        $show->field('updated_at', trans('admin.updated_at'));
+        $show->field('created_at', __('admin.created_at'));
+        $show->field('updated_at', __('admin.updated_at'));
 
         return $show;
     }
@@ -83,7 +87,7 @@ class UserController extends AdminController
      *
      * @return Form
      */
-    public function form()
+    public function form(): Form
     {
         $userModel = config('admin.database.users_model');
         $permissionModel = config('admin.database.permissions_model');
@@ -95,25 +99,25 @@ class UserController extends AdminController
         $connection = config('admin.database.connection');
 
         $form->display('id', 'ID');
-        $form->text('username', trans('admin.username'))
+        $form->text('username', __('admin.username'))
             ->creationRules(['required', "unique:{$connection}.{$userTable}"])
             ->updateRules(['required', "unique:{$connection}.{$userTable},username,{{id}}"]);
 
-        $form->text('name', trans('admin.name'))->rules('required');
-        $form->image('avatar', trans('admin.avatar'));
-        $form->password('password', trans('admin.password'))->rules('required|confirmed');
-        $form->password('password_confirmation', trans('admin.password_confirmation'))->rules('required')
+        $form->text('name', __('admin.name'))->rules('required');
+        $form->image('avatar', __('admin.avatar'));
+        $form->password('password', __('admin.password'))->rules('required|confirmed');
+        $form->password('password_confirmation', __('admin.password_confirmation'))->rules('required')
             ->default(function ($form) {
                 return $form->model()->password;
             });
 
         $form->ignore(['password_confirmation']);
 
-        $form->multipleSelect('roles', trans('admin.roles'))->options($roleModel::all()->pluck('name', 'id'));
-        $form->multipleSelect('permissions', trans('admin.permissions'))->options($permissionModel::all()->pluck('name', 'id'));
+        $form->multipleSelect('roles', __('admin.roles'))->options($roleModel::all()->pluck('name', 'id'));
+        $form->multipleSelect('permissions', __('admin.permissions'))->options($permissionModel::all()->pluck('name', 'id'));
 
-        $form->display('created_at', trans('admin.created_at'));
-        $form->display('updated_at', trans('admin.updated_at'));
+        $form->display('created_at', __('admin.created_at'));
+        $form->display('updated_at', __('admin.updated_at'));
 
         $form->saving(function (Form $form) {
             if ($form->password && $form->model()->password != $form->password) {

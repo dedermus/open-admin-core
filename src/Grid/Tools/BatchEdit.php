@@ -48,4 +48,13 @@ class BatchEdit extends BatchAction
         });
 JS;
     }
+
+    /**
+     * Handle the batch edit action.
+     *
+     */
+    public function handle()
+    {
+
+    }
 }

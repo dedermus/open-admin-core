@@ -144,6 +144,15 @@ return [
             'auth/login',
             'auth/logout',
         ],
+
+        'password_reset' => [
+            'enabled' => env('ADMIN_ENABLE_PASSWORD_RESET', true),
+            'expire' => env('ADMIN_PASSWORD_RESET_EXPIRE', 60),
+            'throttle' => env('ADMIN_PASSWORD_RESET_THROTTLE', 3),
+            'throttle_decay_minutes' => env('ADMIN_PASSWORD_RESET_THROTTLE_DECAY', 60),
+            'from_email' => env('ADMIN_PASSWORD_RESET_FROM_EMAIL', null),
+            'from_name' => env('ADMIN_PASSWORD_RESET_FROM_NAME', 'Admin Panel'),
+        ],
     ],
 
     /*
