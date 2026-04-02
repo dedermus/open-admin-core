@@ -99,7 +99,7 @@
         (function () {
             'use strict';
 
-            // Password visibility toggle
+            // Password visibility toggle (существующий код)
             const passwordToggle = document.querySelector('.password-toggle');
             const passwordInput = document.getElementById('password');
             const toggleIcon = document.getElementById('passwordToggleIcon');
@@ -132,18 +132,169 @@
                     passwordInput.focus();
                 }
             }
-            // Form submission with loading state
-            const form = document.getElementById('loginForm');
-            const loginButton = document.getElementById('loginButton');
-            // Prevent double submission
-            let submitted = false;
+
+            // ============================================================
+            // ЗАЩИТА ОТ ДВОЙНОЙ ОТПРАВКИ, ИНДИКАТОР ЗАГРУЗКИ И ВОССТАНОВЛЕНИЕ
+            // ============================================================
+            const form = document.querySelector('form[action*="auth/login"]');
+
             if (form) {
-                form.addEventListener('submit', function() {
-                    if (submitted) {
+                let isSubmitting = false;
+                let recoveryTimeout = null;
+                const submitButton = form.querySelector('button[type="submit"]');
+                let originalButtonContent = null;
+                let originalButtonText = null;
+
+                if (submitButton) {
+                    originalButtonContent = submitButton.innerHTML;
+                    originalButtonText = submitButton.textContent;
+                }
+
+                // Функция восстановления кнопки
+                function restoreButton() {
+                    if (submitButton && submitButton.disabled) {
+                        submitButton.disabled = false;
+                        if (originalButtonContent) {
+                            submitButton.innerHTML = originalButtonContent;
+                        }
+                        submitButton.classList.remove('opacity-75');
+                        isSubmitting = false;
+
+                        // Очищаем таймаут восстановления
+                        if (recoveryTimeout) {
+                            clearTimeout(recoveryTimeout);
+                            recoveryTimeout = null;
+                        }
+                    }
+                }
+
+                // Функция блокировки кнопки и показа индикатора загрузки
+                function disableButtonWithSpinner() {
+                    if (submitButton && !submitButton.disabled) {
+                        if (!submitButton.hasAttribute('data-original-content')) {
+                            submitButton.setAttribute('data-original-content', originalButtonContent);
+                        }
+
+                        submitButton.disabled = true;
+                        submitButton.innerHTML = `
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            ${originalButtonText || submitButton.textContent}
+                        `;
+                        submitButton.classList.add('opacity-75');
+                    }
+                }
+
+                // Обработчик отправки формы
+                form.addEventListener('submit', function(e) {
+                    // Если уже отправляем - блокируем повторную отправку
+                    if (isSubmitting) {
+                        e.preventDefault();
+                        e.stopPropagation();
                         return false;
                     }
-                    submitted = true;
+
+                    // Устанавливаем флаг отправки
+                    isSubmitting = true;
+
+                    // Блокируем кнопку и показываем спиннер
+                    disableButtonWithSpinner();
+
+                    // Устанавливаем таймаут восстановления (на случай сетевых ошибок)
+                    recoveryTimeout = setTimeout(function() {
+                        if (isSubmitting && submitButton && submitButton.disabled) {
+                            console.warn('Восстановление кнопки по таймауту (возможны проблемы с сетью)');
+                            restoreButton();
+
+                            // Показываем уведомление пользователю
+                            const alert = document.createElement('div');
+                            alert.className = 'alert alert-warning alert-dismissible fade show mt-3';
+                            alert.role = 'alert';
+                            alert.innerHTML = `
+                                <i class="icon-exclamation-triangle me-2"></i>
+                                Превышено время ожидания ответа от сервера. Пожалуйста, проверьте соединение и попробуйте снова.
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            `;
+                            form.prepend(alert);
+
+                            // Автоматически скрываем уведомление через 5 секунд
+                            setTimeout(() => alert.remove(), 5000);
+                        }
+                    }, 30000); // 30 секунд таймаут
+
+                    // Разрешаем отправку формы
                     return true;
+                });
+
+                // Восстановление кнопки при ошибках валидации (сервер вернул форму с ошибками)
+                // Проверяем наличие ошибок на странице
+                function checkForValidationErrors() {
+                    const hasErrors = document.querySelector('.alert-danger, .invalid-feedback, .is-invalid');
+                    if (hasErrors && isSubmitting) {
+                        restoreButton();
+                    }
+                }
+
+                // Запускаем проверку после загрузки страницы (если форма вернулась с ошибками)
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', checkForValidationErrors);
+                } else {
+                    checkForValidationErrors();
+                }
+
+                // Наблюдатель за изменениями в DOM (для динамически добавляемых ошибок)
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.type === 'childList' || mutation.type === 'attributes') {
+                            const hasErrors = document.querySelector('.alert-danger, .invalid-feedback, .is-invalid');
+                            if (hasErrors && isSubmitting) {
+                                restoreButton();
+                                observer.disconnect(); // Отключаем наблюдатель после восстановления
+                            }
+                        }
+                    });
+                });
+
+                // Запускаем наблюдатель, если форма была заблокирована
+                if (isSubmitting) {
+                    observer.observe(document.body, {
+                        childList: true,
+                        subtree: true,
+                        attributes: true,
+                        attributeFilter: ['class']
+                    });
+                }
+
+                // Восстановление кнопки при повторной фокусировке на форме (пользователь кликнул на поле ввода)
+                const formInputs = form.querySelectorAll('input, select, textarea');
+                formInputs.forEach(function(input) {
+                    input.addEventListener('focus', function() {
+                        if (isSubmitting && submitButton && submitButton.disabled) {
+                            // Проверяем, есть ли ошибки валидации
+                            const hasErrors = document.querySelector('.alert-danger, .invalid-feedback, .is-invalid');
+                            if (hasErrors) {
+                                restoreButton();
+                            }
+                        }
+                    });
+                });
+
+                // Восстановление при повторной попытке отправки (пользователь нажал Enter в поле ввода)
+                formInputs.forEach(function(input) {
+                    input.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter' && isSubmitting && submitButton && submitButton.disabled) {
+                            const hasErrors = document.querySelector('.alert-danger, .invalid-feedback, .is-invalid');
+                            if (hasErrors) {
+                                restoreButton();
+                            }
+                        }
+                    });
+                });
+
+                // Дополнительная защита: очищаем флаг при выгрузке страницы
+                window.addEventListener('beforeunload', function() {
+                    if (recoveryTimeout) {
+                        clearTimeout(recoveryTimeout);
+                    }
                 });
             }
         })();
