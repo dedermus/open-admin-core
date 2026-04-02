@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'authorization'         => 'Authorization',
     'online'                => 'Online',
     'login'                 => 'Login',
     'logout'                => 'Logout',

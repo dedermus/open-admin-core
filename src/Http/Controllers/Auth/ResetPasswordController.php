@@ -54,7 +54,7 @@ class ResetPasswordController extends Controller
         );
 
         if ($response === Password::PASSWORD_RESET) {
-            return redirect()->route('admin.login')
+            return redirect()->to('/admin/auth/login')
                 ->with('status', __($response));
         }
 

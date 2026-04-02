@@ -73,7 +73,7 @@ class AuthController extends Controller
         }
 
         return back()->withInput()->withErrors([
-            $this->username() => $this->getFailedLoginMessage(),
+            'attempts_auth' => $this->getFailedLoginMessage(),
         ]);
     }
 
@@ -86,10 +86,19 @@ class AuthController extends Controller
      */
     protected function loginValidator(array $data): \Illuminate\Contracts\Validation\Validator
     {
-        return Validator::make($data, [
-            $this->username() => 'required',
-            'password'        => 'required',
-        ]);
+        $rules = [
+            $this->username() => 'required|string', // или 'required|string'
+            'password' => 'required|string|min:5', // добавили min:5
+        ];
+
+        $messages = [
+            'username.required' => trans('auth.validation.username_required'),
+            'username.email'    => trans('auth.validation.username_email'),
+            'password.required' => trans('auth.validation.password_required'),
+            'password.min'      => trans('auth.validation.password_min', ['min' => 5]),
+        ];
+
+        return Validator::make($data, $rules, $messages);
     }
 
     /**
@@ -154,6 +163,7 @@ class AuthController extends Controller
 
         $form->display('username', trans('admin.username'));
         $form->text('name', trans('admin.name'))->rules('required');
+        $form->email('email', __('admin.email'))->rules('required');
         $form->image('avatar', trans('admin.avatar'));
         $form->password('password', trans('admin.password'))->rules('confirmed|required');
         $form->password('password_confirmation', trans('admin.password_confirmation'))->rules('required')

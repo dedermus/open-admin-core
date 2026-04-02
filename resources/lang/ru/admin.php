@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'authorization'         => 'Авторизация',
     'online'                => 'Онлайн',
     'login'                 => 'Войти',
     'email'                 => 'Электронная почта',
