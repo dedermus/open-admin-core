@@ -58,7 +58,8 @@ class AuthController extends Controller
 
         $this->loginValidator($request->all())->validate();
 
-        $credentials = $request->only([$this->username(), 'password']);
+        // Получаем credentials с правильным полем (email или username)
+        $credentials = $this->getCredentials($request);
         $remember    = $request->get('remember', false);
 
         if ($this->guard()->attempt($credentials, $remember)) {
@@ -78,6 +79,24 @@ class AuthController extends Controller
     }
 
     /**
+     * Get the needed authorization credentials from the request.
+     *
+     * @param Request $request
+     *
+     * @return array
+     */
+    protected function getCredentials(Request $request): array
+    {
+        $username = $request->get($this->username());
+        $field = filter_var($username, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        return [
+            $field => $username,
+            'password' => $request->get('password'),
+        ];
+    }
+
+    /**
      * Get a validator for an incoming login request.
      *
      * @param array $data
@@ -87,15 +106,26 @@ class AuthController extends Controller
     protected function loginValidator(array $data): \Illuminate\Contracts\Validation\Validator
     {
         $rules = [
-            $this->username() => 'required|string', // или 'required|string'
-            'password' => 'required|string|min:5', // добавили min:5
+            $this->username() => [
+                'required',
+                'string',
+                function ($attribute, $value, $fail) {
+                    // Проверяем, является ли значение валидным email или логином
+                    $isEmail = filter_var($value, FILTER_VALIDATE_EMAIL);
+                    $isUsername = preg_match('/^[a-zA-Z0-9_\-]+$/', $value);
+
+                    if (!$isEmail && !$isUsername) {
+                        $fail(trans('admin.validation.username_email_or_username'));
+                    }
+                },
+            ],
+            'password' => 'required|string|min:5',
         ];
 
         $messages = [
-            'username.required' => trans('auth.validation.username_required'),
-            'username.email'    => trans('auth.validation.username_email'),
-            'password.required' => trans('auth.validation.password_required'),
-            'password.min'      => trans('auth.validation.password_min', ['min' => 5]),
+            'username.required' => trans('admin.validation.username_required'),
+            'password.required' => trans('admin.validation.password_required'),
+            'password.min' => trans('admin.validation.password_min', ['min' => 5]),
         ];
 
         return Validator::make($data, $rules, $messages);
@@ -195,8 +225,8 @@ class AuthController extends Controller
      */
     protected function getFailedLoginMessage(): Application|array|string|Translator
     {
-        return Lang::has('auth.failed')
-            ? trans('auth.failed')
+        return Lang::has('admin.failed_attempts')
+            ? trans('admin.failed_attempts')
             : 'These credentials do not match our records.';
     }
 
