@@ -11,7 +11,7 @@
         @if($errors->has('attempts_auth'))
             <div class="alert alert-danger m-0 text-center">{!! $errors->first('attempts_auth') !!}</div>
         @endif
-        <form action="{{ admin_url('auth/login') }}" method="post" novalidate>
+        <form action="{{ admin_url('auth/login') }}" method="post" novalidate id="login-form">
 
             <input type="hidden" name="_token" value="{{ csrf_token() }}">
             <div class="mb-3">
@@ -133,29 +133,28 @@
                 }
             }
 
-            // ============================================================
-            // ЗАЩИТА ОТ ДВОЙНОЙ ОТПРАВКИ, ИНДИКАТОР ЗАГРУЗКИ И ВОССТАНОВЛЕНИЕ
-            // ============================================================
-            const form = document.querySelector('form[action*="auth/login"]');
+// ============================================================
+// ЗАЩИТА ОТ ДВОЙНОЙ ОТПРАВКИ, ИНДИКАТОР ЗАГРУЗКИ И ВОССТАНОВЛЕНИЕ
+// ============================================================
+            const form = document.getElementById('login-form');
 
             if (form) {
                 let isSubmitting = false;
                 let recoveryTimeout = null;
                 const submitButton = form.querySelector('button[type="submit"]');
-                let originalButtonContent = null;
-                let originalButtonText = null;
+                let originalButtonHtml = null;
 
                 if (submitButton) {
-                    originalButtonContent = submitButton.innerHTML;
-                    originalButtonText = submitButton.textContent;
+                    // Сохраняем полный HTML оригинального содержимого кнопки (включая иконки)
+                    originalButtonHtml = submitButton.innerHTML;
                 }
 
                 // Функция восстановления кнопки
                 function restoreButton() {
                     if (submitButton && submitButton.disabled) {
                         submitButton.disabled = false;
-                        if (originalButtonContent) {
-                            submitButton.innerHTML = originalButtonContent;
+                        if (originalButtonHtml) {
+                            submitButton.innerHTML = originalButtonHtml;
                         }
                         submitButton.classList.remove('opacity-75');
                         isSubmitting = false;
@@ -171,15 +170,18 @@
                 // Функция блокировки кнопки и показа индикатора загрузки
                 function disableButtonWithSpinner() {
                     if (submitButton && !submitButton.disabled) {
-                        if (!submitButton.hasAttribute('data-original-content')) {
-                            submitButton.setAttribute('data-original-content', originalButtonContent);
+                        // Сохраняем оригинальный HTML, если ещё не сохранили
+                        if (!submitButton.hasAttribute('data-original-html')) {
+                            submitButton.setAttribute('data-original-html', originalButtonHtml);
                         }
 
                         submitButton.disabled = true;
+                        // Сохраняем текст кнопки (без HTML тегов) для отображения во время загрузки
+                        const buttonText = submitButton.textContent.trim();
                         submitButton.innerHTML = `
-                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                            ${originalButtonText || submitButton.textContent}
-                        `;
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                ${buttonText}
+            `;
                         submitButton.classList.add('opacity-75');
                     }
                 }
@@ -210,10 +212,10 @@
                             alert.className = 'alert alert-warning alert-dismissible fade show mt-3';
                             alert.role = 'alert';
                             alert.innerHTML = `
-                                <i class="icon-exclamation-triangle me-2"></i>
-                                Превышено время ожидания ответа от сервера. Пожалуйста, проверьте соединение и попробуйте снова.
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            `;
+                    <i class="icon-exclamation-triangle me-2"></i>
+                    Превышено время ожидания ответа от сервера. Пожалуйста, проверьте соединение и попробуйте снова.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
                             form.prepend(alert);
 
                             // Автоматически скрываем уведомление через 5 секунд
@@ -225,8 +227,7 @@
                     return true;
                 });
 
-                // Восстановление кнопки при ошибках валидации (сервер вернул форму с ошибками)
-                // Проверяем наличие ошибок на странице
+                // Восстановление кнопки при ошибках валидации
                 function checkForValidationErrors() {
                     const hasErrors = document.querySelector('.alert-danger, .invalid-feedback, .is-invalid');
                     if (hasErrors && isSubmitting) {
@@ -234,27 +235,26 @@
                     }
                 }
 
-                // Запускаем проверку после загрузки страницы (если форма вернулась с ошибками)
+                // Запускаем проверку после загрузки страницы
                 if (document.readyState === 'loading') {
                     document.addEventListener('DOMContentLoaded', checkForValidationErrors);
                 } else {
                     checkForValidationErrors();
                 }
 
-                // Наблюдатель за изменениями в DOM (для динамически добавляемых ошибок)
+                // Наблюдатель за изменениями в DOM
                 const observer = new MutationObserver(function(mutations) {
                     mutations.forEach(function(mutation) {
                         if (mutation.type === 'childList' || mutation.type === 'attributes') {
                             const hasErrors = document.querySelector('.alert-danger, .invalid-feedback, .is-invalid');
                             if (hasErrors && isSubmitting) {
                                 restoreButton();
-                                observer.disconnect(); // Отключаем наблюдатель после восстановления
+                                observer.disconnect();
                             }
                         }
                     });
                 });
 
-                // Запускаем наблюдатель, если форма была заблокирована
                 if (isSubmitting) {
                     observer.observe(document.body, {
                         childList: true,
@@ -264,12 +264,11 @@
                     });
                 }
 
-                // Восстановление кнопки при повторной фокусировке на форме (пользователь кликнул на поле ввода)
+                // Восстановление при фокусе на полях ввода
                 const formInputs = form.querySelectorAll('input, select, textarea');
                 formInputs.forEach(function(input) {
                     input.addEventListener('focus', function() {
                         if (isSubmitting && submitButton && submitButton.disabled) {
-                            // Проверяем, есть ли ошибки валидации
                             const hasErrors = document.querySelector('.alert-danger, .invalid-feedback, .is-invalid');
                             if (hasErrors) {
                                 restoreButton();
@@ -278,25 +277,12 @@
                     });
                 });
 
-                // Восстановление при повторной попытке отправки (пользователь нажал Enter в поле ввода)
-                formInputs.forEach(function(input) {
-                    input.addEventListener('keypress', function(e) {
-                        if (e.key === 'Enter' && isSubmitting && submitButton && submitButton.disabled) {
-                            const hasErrors = document.querySelector('.alert-danger, .invalid-feedback, .is-invalid');
-                            if (hasErrors) {
-                                restoreButton();
-                            }
-                        }
-                    });
-                });
-
-                // Дополнительная защита: очищаем флаг при выгрузке страницы
+                // Очищаем ресурсы при выгрузке страницы
                 window.addEventListener('beforeunload', function() {
                     if (recoveryTimeout) {
                         clearTimeout(recoveryTimeout);
                     }
                 });
-            }
-        })();
+            }        })();
     </script>
 @endpush
