@@ -119,11 +119,16 @@ class AdminServiceProvider extends ServiceProvider
     protected function registerPublishing(): void
     {
         if ($this->app->runningInConsole()) {
+
             $this->publishes([__DIR__.'/../config' => config_path()], 'open-admin-config');
             $this->publishes([__DIR__.'/../resources/lang' => resource_path('lang')], 'open-admin-lang');
             $this->publishes([__DIR__.'/../database/migrations' => database_path('migrations')], 'open-admin-migrations');
             $this->publishes([__DIR__.'/../resources/assets' => public_path('vendor/open-admin')], 'open-admin-assets');
             $this->publishes([__DIR__.'/../resources/assets/test' => public_path('vendor/open-admin-test')], 'open-admin-test');
+
+            $this->publishes([
+                __DIR__.'/../resources/assets/js/login.js' => public_path('vendor/open-admin/js/login.js'),
+            ], 'open-admin-assets');
         }
     }
 
