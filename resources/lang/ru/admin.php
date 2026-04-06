@@ -12,6 +12,7 @@ return [
     'users'                 => 'Пользователи',
     'password'              => 'Пароль',
     'password_confirmation' => 'Подтверждение пароля',
+    'new_password'          => 'Новый пароль',
     'remember_me'           => 'Запомнить',
     'forgot_password'       => 'Забыли пароль?',
     'user_setting'          => 'Настройки пользователя',
