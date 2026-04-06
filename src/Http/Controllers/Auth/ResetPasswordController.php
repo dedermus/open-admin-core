@@ -50,7 +50,10 @@ class ResetPasswordController extends Controller
 
 
                 // Отправляем уведомление на email
-                $user->notify(new PasswordResetSuccess());
+                $user->notify(new PasswordResetSuccess(
+                    $request->ip(),
+                    $request->userAgent()
+                ));
 
                 // Логируем успешный сброс
                 Log::channel('password_reset')->info('Password reset successful', [
