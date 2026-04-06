@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use OpenAdminCore\Admin\Http\Controllers\Controller;
 use OpenAdminCore\Admin\Http\Requests\ResetPasswordRequest;
+use OpenAdminCore\Admin\Notifications\PasswordResetSuccess;
 
 class ResetPasswordController extends Controller
 {
@@ -41,7 +42,15 @@ class ResetPasswordController extends Controller
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) use ($request) {
                 $user->password = Hash::make($password);
+
+                // Принудительный выход из всех устройств
+                $user->remember_token = null;
                 $user->save();
+
+
+
+                // Отправляем уведомление на email
+                $user->notify(new PasswordResetSuccess());
 
                 // Логируем успешный сброс
                 Log::channel('password_reset')->info('Password reset successful', [
