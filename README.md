@@ -148,8 +148,8 @@ php artisan vendor:publish --provider="OpenAdminCore\Admin\AdminServiceProvider"
 
     'admin' => [
         'driver' => 'local',
-        'root' => public_path('admin/uploads'),
-        'url' => env('APP_URL').'/admin/uploads',
+        'root' => public_path('uploads'),
+        'url' => env('APP_URL').'/uploads',
         'visibility' => 'public',
         'throw' => false,
         'permissions' => [

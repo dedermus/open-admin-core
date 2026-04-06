@@ -30,8 +30,8 @@ class ForgotPasswordRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'credential.required' => __('admin::admin.validation.credential_required'),
-            'credential.max' => __('admin::admin.validation.credential_max'),
+            'credential.required' => __('admin.validation.credential_required'),
+            'credential.max' => __('admin.validation.credential_max'),
         ];
     }
 }

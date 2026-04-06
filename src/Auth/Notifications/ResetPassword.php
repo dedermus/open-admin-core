@@ -52,11 +52,11 @@ class ResetPassword extends Notification
         $expireMinutes = config('admin.auth.password_reset.expire', 60);
 
         return (new MailMessage)
-            ->subject(__('admin::admin.password_reset.subject'))
-            ->line(__('admin::admin.password_reset.intro'))
-            ->action(__('admin::admin.password_reset.action'), $resetUrl)
-            ->line(__('admin::admin.password_reset.expire', ['minutes' => $expireMinutes]))
-            ->line(__('admin::admin.password_reset.outro'));
+            ->subject(__('admin.password_reset.subject'))
+            ->line(__('admin.password_reset.intro'))
+            ->action(__('admin.password_reset.action'), $resetUrl)
+            ->line(__('admin.password_reset.expire', ['minutes' => $expireMinutes]))
+            ->line(__('admin.password_reset.outro'));
     }
 
     /**

@@ -120,6 +120,8 @@ return [
     'confirm_password' => 'Confirm Password',
     'thanks' => 'Regards',
 
+    'validation_error' => 'Validation error',
+
     'password_reset' => [
         'title' => 'Password Reset',
         'subject' => 'Admin Panel Password Reset',

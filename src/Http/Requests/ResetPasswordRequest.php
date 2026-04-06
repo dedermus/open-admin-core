@@ -33,11 +33,11 @@ class ResetPasswordRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'token.required' => __('admin::admin.validation.token_required'),
-            'email.required' => __('admin::admin.validation.email_required'),
-            'email.email' => __('admin::admin.validation.email_invalid'),
-            'password.required' => __('admin::admin.validation.password_required'),
-            'password.confirmed' => __('admin::admin.validation.password_confirmed'),
+            'token.required' => __('admin.validation.token_required'),
+            'email.required' => __('admin.validation.email_required'),
+            'email.email' => __('admin.validation.email_invalid'),
+            'password.required' => __('admin.validation.password_required'),
+            'password.confirmed' => __('admin.validation.password_confirmed'),
         ];
     }
 }

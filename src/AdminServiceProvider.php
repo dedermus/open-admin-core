@@ -128,7 +128,9 @@ class AdminServiceProvider extends ServiceProvider
 
             $this->publishes([
                 __DIR__.'/../resources/assets/js/login.js' => public_path('vendor/open-admin/js/login.js'),
+                __DIR__.'/../resources/assets/js/forgot-password.js' => public_path('vendor/open-admin/js/forgot-password.js'),
             ], 'open-admin-assets');
+
         }
     }
 
