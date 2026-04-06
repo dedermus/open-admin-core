@@ -3,6 +3,7 @@
 namespace OpenAdminCore\Admin\Http\Controllers\Auth;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -31,14 +32,14 @@ class ResetPasswordController extends Controller
      * Сбросить пароль.
      *
      * @param ResetPasswordRequest $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
     public function reset(ResetPasswordRequest $request)
     {
         // Используем брокер 'admin'
         $response = Password::broker('admin')->reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
+            function ($user, $password) use ($request) {
                 $user->password = Hash::make($password);
                 $user->save();
 
@@ -47,12 +48,40 @@ class ResetPasswordController extends Controller
                     'user_id' => $user->id,
                     'username' => $user->username,
                     'email' => $user->email,
-                    'ip' => request()->ip(),
-                    'user_agent' => request()->userAgent(),
+                    'ip' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
                 ]);
             }
         );
 
+        // Обработка AJAX запроса
+        if ($request->ajax() || $request->wantsJson()) {
+            if ($response === Password::PASSWORD_RESET) {
+                return response()->json([
+                    'success' => true,
+                    'message' => __($response),
+                    'redirect' => route('admin.login', [], false)
+                ], 200);
+            }
+
+            // Обработка throttle (слишком много попыток)
+            if ($response === Password::RESET_THROTTLED) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __($response),
+                    'errors' => ['throttle' => [__($response)]]
+                ], 429);
+            }
+
+            // Остальные ошибки
+            return response()->json([
+                'success' => false,
+                'message' => __($response),
+                'errors' => ['email' => [__($response)]]
+            ], 422);
+        }
+
+        // Обычный (не-AJAX) ответ
         if ($response === Password::PASSWORD_RESET) {
             return redirect()->to('/admin/auth/login')
                 ->with('status', __($response));
