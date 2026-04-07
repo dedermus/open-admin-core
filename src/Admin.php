@@ -436,7 +436,7 @@ class Admin
      */
     public static function loginFormStart()
     {
-        return Event::dispatch('admin.login.form.start', [])->collect()->implode('');
+        return static::callHook('admin.login.form.start');
     }
 
     /**
@@ -445,7 +445,7 @@ class Admin
      */
     public static function loginFormFields()
     {
-        return Event::dispatch('admin.login.form.fields', [])->collect()->implode('');
+        return static::callHook('admin.login.form.fields');
     }
 
     /**
@@ -454,7 +454,7 @@ class Admin
      */
     public static function loginFormEnd()
     {
-        return Event::dispatch('admin.login.form.end', [])->collect()->implode('');
+        return static::callHook('admin.login.form.end');
     }
 
     /**
@@ -463,7 +463,7 @@ class Admin
      */
     public static function loginFormScripts()
     {
-        return Event::dispatch('admin.login.form.scripts', [])->collect()->implode('');
+        return static::callHook('admin.login.form.scripts');
     }
 
     /**
@@ -472,7 +472,7 @@ class Admin
      */
     public static function navbarLeft()
     {
-        return Event::dispatch('admin.navbar.left', [])->collect()->implode('');
+        return static::callHook('admin.navbar.left');
     }
 
     /**
@@ -481,7 +481,7 @@ class Admin
      */
     public static function navbarRight()
     {
-        return Event::dispatch('admin.navbar.right', [])->collect()->implode('');
+        return static::callHook('admin.navbar.right');
     }
 
     /**
@@ -495,11 +495,11 @@ class Admin
 
     public static function pageHeader()
     {
-        return Event::dispatch('admin.page.header', [])->collect()->implode('');
+        return static::callHook('admin.page.header');
     }
 
     public static function pageFooter()
     {
-        return Event::dispatch('admin.page.footer', [])->collect()->implode('');
+        return static::callHook('admin.page.footer');
     }
 }
