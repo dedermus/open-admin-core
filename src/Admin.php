@@ -6,11 +6,13 @@ use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
 use OpenAdminCore\Admin\Auth\Database\Menu;
 use OpenAdminCore\Admin\Controllers\AuthController;
 use OpenAdminCore\Admin\Layout\Content;
 use OpenAdminCore\Admin\Traits\HasAssets;
+use OpenAdminCore\Admin\Traits\HasHooks;
 use OpenAdminCore\Admin\Widgets\Navbar;
 
 /**
@@ -18,14 +20,14 @@ use OpenAdminCore\Admin\Widgets\Navbar;
  */
 class Admin
 {
-    use HasAssets;
+    use HasAssets, HasHooks;
 
     /**
      * The Open-admin version.
      *
      * @var string
      */
-    public const VERSION = '1.0.01';
+    public const VERSION = '2.0.01';
 
     /**
      * @var Navbar
@@ -426,5 +428,78 @@ class Admin
         $lang_array = json_encode(__('admin'));
 
         return '<script>var admin_lang_arr = '.$lang_array.'</script>';
+    }
+
+    /**
+     * Хук: начало формы авторизации
+     * Используется в resources/views/auth/login.blade.php
+     */
+    public static function loginFormStart()
+    {
+        return Event::dispatch('admin.login.form.start', [])->collect()->implode('');
+    }
+
+    /**
+     * Хук: поля формы авторизации (например, выбор языка)
+     * Используется в resources/views/login.blade.php
+     */
+    public static function loginFormFields()
+    {
+        return Event::dispatch('admin.login.form.fields', [])->collect()->implode('');
+    }
+
+    /**
+     * Хук: конец формы авторизации
+     * Используется в resources/views/auth/login.blade.php
+     */
+    public static function loginFormEnd()
+    {
+        return Event::dispatch('admin.login.form.end', [])->collect()->implode('');
+    }
+
+    /**
+     * Хук: скрипты для формы авторизации
+     * Используется в @push('scripts') в resources/views/auth/login.blade.php
+     */
+    public static function loginFormScripts()
+    {
+        return Event::dispatch('admin.login.form.scripts', [])->collect()->implode('');
+    }
+
+    /**
+     * Хук: левая часть навбара
+     * Используется в resources/views/layouts/admin.blade.php
+     */
+    public static function navbarLeft()
+    {
+        return Event::dispatch('admin.navbar.left', [])->collect()->implode('');
+    }
+
+    /**
+     * Хук: правая часть навбара (например, переключатель языка)
+     * Используется в resources/views/layouts/admin.blade.php
+     */
+    public static function navbarRight()
+    {
+        return Event::dispatch('admin.navbar.right', [])->collect()->implode('');
+    }
+
+    /**
+     * Регистрация слушателя события
+     * Используется в пакетах для подписки на хуки
+     */
+    public static function listen($event, $callback)
+    {
+        Event::listen($event, $callback);
+    }
+
+    public static function pageHeader()
+    {
+        return Event::dispatch('admin.page.header', [])->collect()->implode('');
+    }
+
+    public static function pageFooter()
+    {
+        return Event::dispatch('admin.page.footer', [])->collect()->implode('');
     }
 }
