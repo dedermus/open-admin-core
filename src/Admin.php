@@ -6,13 +6,11 @@ use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
 use OpenAdminCore\Admin\Auth\Database\Menu;
 use OpenAdminCore\Admin\Controllers\AuthController;
 use OpenAdminCore\Admin\Layout\Content;
 use OpenAdminCore\Admin\Traits\HasAssets;
-use OpenAdminCore\Admin\Traits\HasHooks;
 use OpenAdminCore\Admin\Widgets\Navbar;
 
 /**
@@ -20,7 +18,7 @@ use OpenAdminCore\Admin\Widgets\Navbar;
  */
 class Admin
 {
-    use HasAssets, HasHooks;
+    use HasAssets;
 
     /**
      * The Open-admin version.
@@ -428,78 +426,5 @@ class Admin
         $lang_array = json_encode(__('admin'));
 
         return '<script>var admin_lang_arr = '.$lang_array.'</script>';
-    }
-
-    /**
-     * Хук: начало формы авторизации
-     * Используется в resources/views/auth/login.blade.php
-     */
-    public static function loginFormStart()
-    {
-        return static::callHook('admin.login.form.start');
-    }
-
-    /**
-     * Хук: поля формы авторизации (например, выбор языка)
-     * Используется в resources/views/login.blade.php
-     */
-    public static function loginFormFields()
-    {
-        return static::callHook('admin.login.form.fields');
-    }
-
-    /**
-     * Хук: конец формы авторизации
-     * Используется в resources/views/auth/login.blade.php
-     */
-    public static function loginFormEnd()
-    {
-        return static::callHook('admin.login.form.end');
-    }
-
-    /**
-     * Хук: скрипты для формы авторизации
-     * Используется в @push('scripts') в resources/views/auth/login.blade.php
-     */
-    public static function loginFormScripts()
-    {
-        return static::callHook('admin.login.form.scripts');
-    }
-
-    /**
-     * Хук: левая часть навбара
-     * Используется в resources/views/layouts/admin.blade.php
-     */
-    public static function navbarLeft()
-    {
-        return static::callHook('admin.navbar.left');
-    }
-
-    /**
-     * Хук: правая часть навбара (например, переключатель языка)
-     * Используется в resources/views/layouts/admin.blade.php
-     */
-    public static function navbarRight()
-    {
-        return static::callHook('admin.navbar.right');
-    }
-
-    /**
-     * Регистрация слушателя события
-     * Используется в пакетах для подписки на хуки
-     */
-    public static function listen($event, $callback)
-    {
-        Event::listen($event, $callback);
-    }
-
-    public static function pageHeader()
-    {
-        return static::callHook('admin.page.header');
-    }
-
-    public static function pageFooter()
-    {
-        return static::callHook('admin.page.footer');
     }
 }

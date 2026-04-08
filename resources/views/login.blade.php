@@ -1,16 +1,11 @@
 @extends('admin::layouts.auth')
 @section('title', __('admin.authorization'))
 @section('content')
-    {{-- Хук: начало формы — добавлено в начало --}}
-    {!! Admin::loginFormStart() !!}
 
     <h4 class="text-center">
         <i class="icon-shield-alt me-2"></i>
         {{ __('admin.authorization') }}
     </h4>
-
-    {{-- HХук: поля формы — добавлено после заголовка, перед основными полями --}}
-    {!! Admin::loginFormFields() !!}
 
     @if($errors->has('attempts'))
         <div class="alert alert-danger m-0 text-center">{!! $errors->first('attempts') !!}</div>
@@ -100,13 +95,9 @@
         </form>
     @endif
 
-    {{-- Хук: конец формы — добавлено перед закрытием content --}}
-    {!! Admin::loginFormEnd() !!}
 @endsection
 
 @push('scripts')
     {{-- Подключаем внешний JS-файл --}}
     <script src="{{ Admin::asset("js/login.js") }}"></script>
-    {{-- Хук: скрипты формы — добавлено в @push('scripts') --}}
-    {!! Admin::loginFormScripts() !!}
 @endpush
