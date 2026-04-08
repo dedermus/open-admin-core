@@ -5,6 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>{{ config('admin.title') }} | @yield('title', __('admin.login'))</title>
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     @if(!is_null($favicon = Admin::favicon()))
         <title>{{ config('admin.title') }} | @yield('title', __('admin.login'))</title>

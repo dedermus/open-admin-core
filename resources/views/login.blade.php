@@ -88,7 +88,7 @@
                 </div>
             @endif
             <!-- НАЧАЛО: Блок для выбора языка (будет подставлен из пакета multi-language) -->
-            @yield('admin.login.language_selector')
+            @includeIf('multi-language::partials.login-language-selector')
             <!-- КОНЕЦ: Блок для выбора языка -->
             <div class="mb-3">
                 <div class="d-grid gap-2">
