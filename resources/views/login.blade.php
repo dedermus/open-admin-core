@@ -87,6 +87,9 @@
                     </div>
                 </div>
             @endif
+            <!-- НАЧАЛО: Блок для выбора языка (будет подставлен из пакета multi-language) -->
+            @yield('admin.login.language_selector')
+            <!-- КОНЕЦ: Блок для выбора языка -->
             <div class="mb-3">
                 <div class="d-grid gap-2">
                     <button type="submit" class="btn btn-primary" id="loginButton"><i class="icon-sign-in me-2"></i>{{ __('admin.login') }}</button>
