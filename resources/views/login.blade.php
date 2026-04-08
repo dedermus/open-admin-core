@@ -87,8 +87,11 @@
                     </div>
                 </div>
             @endif
+            {{-- Проверка на существование --}}
             <!-- НАЧАЛО: Блок для выбора языка (будет подставлен из пакета multi-language) -->
-            @includeIf('multi-language::partials.login-language-selector')
+            @if(View::exists('multi-language::partials.login-language-selector'))
+                @include('multi-language::partials.login-language-selector')
+            @endif
             <!-- КОНЕЦ: Блок для выбора языка -->
             <div class="mb-3">
                 <div class="d-grid gap-2">
