@@ -14,6 +14,7 @@ use OpenAdminCore\Admin\Auth\Notifications\ResetPassword;
 use OpenAdminCore\Admin\Traits\DefaultDatetimeFormat;
 use OpenAdminCore\Admin\Traits\ModelTree;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 /**
  * Class Administrator
@@ -37,6 +38,7 @@ class Administrator extends Model implements AuthenticatableContract, CanResetPa
     use DefaultDatetimeFormat;
     use ModelTree;
     use Notifiable;
+    use HasApiTokens;
 
     /**
      * {@inheritdoc}
